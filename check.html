@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instance Availability Checker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .results {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+    }
+    .result-item {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Check Instance Availability</h1>
+  
+  <div class="container">
+    <button onclick="fetchAndCheckInstances()">Check Availability</button>
+
+    <div class="results" id="results">
+      <!-- Available instances will be displayed here -->
+    </div>
+  </div>
+
+  <script>
+    let listedInstances = [];
+    let videoId = "jNQXAC9IVRw";
+
+    async function checkAvailableInstances(instances, videoId) {
+      let availableInstances = [];
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = "Checking... Please wait.";
+
+      for (let instance of instances) {
+        let testUrl = instance + "/streams/" + videoId;
+        console.log("xd " + testUrl);
+
+        try {
+          const resp = await fetch(testUrl);
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.title === "Me at the zoo") {
+              console.log("Valid response with title 'Me at the zoo' from: " + testUrl);
+              availableInstances.push(instance); 
+              break; 
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching from: " + testUrl, error);
+        }
+      }
+
+      // Display the results
+      if (availableInstances.length > 0) {
+        resultsDiv.innerHTML = "<strong>Available Instances:</strong>";
+        availableInstances.forEach(instance => {
+          const resultItem = document.createElement('div');
+          resultItem.className = 'result-item';
+          resultItem.textContent = instance;
+          resultsDiv.appendChild(resultItem);
+        });
+      } else {
+        resultsDiv.innerHTML = "<strong>No available instances found.</strong>";
+      }
+    }
+
+    function fetchAndCheckInstances() {
+      fetch("https://raw.githubusercontent.com/TeamPiped/documentation/refs/heads/main/content/docs/public-instances/index.md")
+        .then(resp => resp.text())
+        .then(body => {
+          var skipped = 0;
+          const lines = body.split("\n");
+          lines.map(line => {
+            const split = line.split("|");
+            if (split.length == 5) {
+              if (skipped < 2) {
+                skipped++;
+                return;
+              }
+              listedInstances.push(split[1].trim());
+            }
+          });
+          checkAvailableInstances(listedInstances, videoId);
+        })
+        .catch(error => {
+          console.error("Error fetching the instances list:", error);
+          document.getElementById('results').innerHTML = "<strong>Failed to fetch instances list.</strong>";
+        });
+    }
+  </script>
+
+</body>
+</html>
